@@ -212,10 +212,19 @@ class MultiScaleEncoder(nn.Module):
             self.layers.append(nn.ModuleList([
                 # 2 transformer branches, one for small, one for large patchs
                 # + 1 cross transformer block
+                Transformer(sm_dim, sm_enc_params["depth"], sm_enc_params["heads"], sm_enc_params["dim_head"],
+                            sm_enc_params["mlp_dim"], dropout),
+                Transformer(lg_dim, lg_enc_params["depth"], lg_enc_params["heads"], lg_enc_params["dim_head"],
+                            lg_enc_params["mlp_dim"], dropout),
+                CrossTransformer(sm_dim, lg_dim, cross_attn_depth, cross_attn_heads, cross_attn_dim_head, dropout)
             ]))
 
     def forward(self, sm_tokens, lg_tokens):
         # forward through the transformer encoders and cross attention block
+        for layer in self.layers:
+            sm_tokens = layer[0](sm_tokens)
+            lg_tokens = layer[1](lg_tokens)
+            sm_tokens, lg_tokens = layer[2](sm_tokens, lg_tokens)
         return sm_tokens, lg_tokens
 
 
