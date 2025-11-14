@@ -177,7 +177,12 @@ class CrossTransformer(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList([])
         # TODO: create # depth encoders using ProjectInOut
-        # Note: no positional FFN here 
+        # Note: no positional FFN here
+        for _ in range(depth):
+            self.layers.append(nn.ModuleList([
+                ProjectInOut(sm_dim, lg_dim, Attention(lg_dim, heads, dim_head, dropout)),
+                ProjectInOut(lg_dim, sm_dim, Attention(sm_dim, heads, dim_head, dropout))
+            ]))
 
     def forward(self, sm_tokens, lg_tokens):
         (sm_cls, sm_patch_tokens), (lg_cls, lg_patch_tokens) = map(lambda t: (t[:, :1], t[:, 1:]),
@@ -188,8 +193,17 @@ class CrossTransformer(nn.Module):
         # 1. small cls token to large patches and
         # 2. large cls token to small patches
         # TODO
+        for layer in self.layers:
+            lg_tokens = layer[0](sm_cls, lg_patch_tokens, True)
+            sm_tokens = layer[1](lg_cls, sm_patch_tokens, True)
+            (lg_cls, sm_patch_tokens), (sm_cls, lg_patch_tokens) = map(lambda t: (t[:, :1], t[:, 1:]),
+                                                                       (sm_tokens, lg_tokens))
+
         # finally concat sm/lg cls tokens with patch tokens 
         # TODO
+        sm_tokens = torch.cat((sm_cls, sm_patch_tokens), dim=1)
+        lg_tokens = torch.cat((lg_cls, lg_patch_tokens), dim=1)
+
         return sm_tokens, lg_tokens
 
 
