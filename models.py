@@ -78,7 +78,7 @@ class Attention(nn.Module):
         # don't forget the dropout after the attention 
         # and before the multiplication w. 'v'
         # the output should be in the shape 'b n (h d)'
-        b, n, d, h = *x.shape, self.heads
+        b, _, d, h = *x.shape, self.heads
         if context is None:
             context = x
 
@@ -93,9 +93,9 @@ class Attention(nn.Module):
         Value = self.V(context)
 
         # making key, query, and value multi-headed
-        MultiHead_Q = Query.reshape(b, n, h, self.dim_head).permute(0, 2, 1, 3)
-        MultiHead_K = Key.reshape(b, n, h, self.dim_head).permute(0, 2, 1, 3)
-        MultiHead_V = Value.reshape(b, n, h, self.dim_head).permute(0, 2, 1, 3)
+        MultiHead_Q = Query.reshape(b, x.shape[1], h, self.dim_head).permute(0, 2, 1, 3)
+        MultiHead_K = Key.reshape(b, context.shape[1], h, self.dim_head).permute(0, 2, 1, 3)
+        MultiHead_V = Value.reshape(b, context.shape[1], h, self.dim_head).permute(0, 2, 1, 3)
 
         # computing the attention scores: softmax(Q.K_T / sqrt(head_dim))
         AttentionScores = torch.einsum("bhij,bhjk->bhik", MultiHead_Q, MultiHead_K.permute(0, 1, 3, 2)) / self.scale
@@ -107,7 +107,7 @@ class Attention(nn.Module):
 
         # concatenating the heads and pass it through the final linear layer
         MultiHead_out = MultiHead_out.permute(0, 2, 1, 3)
-        concat_heads = MultiHead_out.reshape(b, n, d)
+        concat_heads = MultiHead_out.reshape(b, x.shape[1], d)
         out = self.Wo(concat_heads)
         out = self.dropout(out)
 
