@@ -163,7 +163,10 @@ class ProjectInOut(nn.Module):
             - fn(W_in) * W_out
         """
         # TODO
-        return x
+        x_in = self.project_in(x)
+        x_fn = self.fn(x_in, *args, **kwargs)
+        x_out = self.project_out(x_fn)
+        return x_out
 
 
 # CrossViT
