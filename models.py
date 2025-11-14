@@ -238,20 +238,37 @@ class ImageEmbedder(nn.Module):
 
         # create layer that re-arranges the image patches
         # and embeds them with layer norm + linear projection + layer norm
+        patch_height, patch_width = pair(patch_size)
         self.to_patch_embedding = nn.Sequential(
             # TODO
+            Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width),
+            nn.LayerNorm(patch_dim),
+            nn.Linear(patch_dim, dim),
+            nn.LayerNorm(dim),
         )
         # create/initialize #dim-dimensional positional embedding (will be learned)
         # TODO
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+
         # create #dim cls tokens (for each patch embedding)
         # TODO
+        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
+
         # create dropput layer
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, img):
         # forward through patch embedding layer
+        x = self.to_patch_embedding(img)
+        b, n, dim = x.shape
+
         # concat class tokens
+        cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
+        x = torch.cat((cls_tokens, x), dim=1)
+
         # and add positional embedding
+        x += self.pos_embedding[:, :(n + 1)]
+
         return self.dropout(x)
 
 
@@ -349,6 +366,8 @@ class CrossViT(nn.Module):
         super().__init__()
         # create ImageEmbedder for small and large patches
         # TODO
+        self.sm_patch_embedding = ImageEmbedder(dim=sm_dim, image_size=image_size, patch_size=sm_patch_size)
+        self.lg_patch_embedding = ImageEmbedder(dim=lg_dim, image_size=image_size, patch_size=lg_patch_size)
 
         # create MultiScaleEncoder
         self.multi_scale_encoder = MultiScaleEncoder(
@@ -378,11 +397,15 @@ class CrossViT(nn.Module):
         self.lg_mlp_head = nn.Sequential(nn.LayerNorm(lg_dim), nn.Linear(lg_dim, num_classes))
 
     def forward(self, img):
+        print(img.shape)
         # apply image embedders
         # TODO
+        sm_tokens = self.sm_patch_embedding(img)
+        lg_tokens = self.lg_patch_embedding(img)
 
         # and the multi-scale encoder
         # TODO
+        sm_tokens, lg_tokens = self.multi_scale_encoder(sm_tokens, lg_tokens)
 
         # call the mlp heads w. the class tokens 
         # TODO
