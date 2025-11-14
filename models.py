@@ -397,7 +397,6 @@ class CrossViT(nn.Module):
         self.lg_mlp_head = nn.Sequential(nn.LayerNorm(lg_dim), nn.Linear(lg_dim, num_classes))
 
     def forward(self, img):
-        print(img.shape)
         # apply image embedders
         # TODO
         sm_tokens = self.sm_patch_embedding(img)
@@ -409,6 +408,10 @@ class CrossViT(nn.Module):
 
         # call the mlp heads w. the class tokens 
         # TODO
+        sm_cls_token = sm_tokens[:, 0, :]
+        lg_cls_token = lg_tokens[:, 0, :]
+        sm_logits = self.sm_mlp_head(sm_cls_token)
+        lg_logits = self.lg_mlp_head(lg_cls_token)
 
         return sm_logits + lg_logits
 
