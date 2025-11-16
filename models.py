@@ -78,7 +78,10 @@ class Attention(nn.Module):
         # don't forget the dropout after the attention 
         # and before the multiplication w. 'v'
         # the output should be in the shape 'b n (h d)'
-        b, _, d, h = *x.shape, self.heads
+        if len(x.shape) == 2:
+            x = x.unsqueeze(1)
+        b, _, d = x.shape
+        h = self.heads
         if context is None:
             context = x
 
@@ -194,10 +197,8 @@ class CrossTransformer(nn.Module):
         # 2. large cls token to small patches
         # TODO
         for layer in self.layers:
-            lg_tokens = layer[0](sm_cls, lg_patch_tokens, True)
-            sm_tokens = layer[1](lg_cls, sm_patch_tokens, True)
-            (lg_cls, sm_patch_tokens), (sm_cls, lg_patch_tokens) = map(lambda t: (t[:, :1], t[:, 1:]),
-                                                                       (sm_tokens, lg_tokens))
+            sm_cls = layer[0](sm_cls, lg_patch_tokens, True)
+            lg_cls = layer[1](lg_cls, sm_patch_tokens, True)
 
         # finally concat sm/lg cls tokens with patch tokens 
         # TODO
