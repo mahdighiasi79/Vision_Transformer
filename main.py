@@ -9,24 +9,28 @@ from torch import optim
 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
+import pickle
 
 from torchvision.transforms import RandomResizedCrop
 
 from models import ViT, CrossViT  # rename the skeleton file for your implementation / comment before testing for ResNet
+
+validation_set_accuracies = []
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a neural network to classify CIFAR10')
     parser.add_argument('--model', type=str, default='cvit', help='model to train (default: r18)')
     parser.add_argument('--batch-size', type=int, default=256, help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=200, help='number of epochs to train (default: 5)')
+    parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train (default: 5)')
     parser.add_argument('--lr', type=float, default=5e-4, help='learning rate (default: 0.003)')
     parser.add_argument('--momentum', type=float, default=0.9, help='SGD momentum (default: 0.9)')
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10,
                         help='how many batches to wait before logging training status')
-    parser.add_argument('--save-model', action='store_true', default=False, help='For Saving the current Model')
+    parser.add_argument('--save-model', action='store_true', default=True, help='For Saving the current Model')
     parser.add_argument('--dry-run', action='store_true', default=False, help='quickly check a single pass')
     parser.add_argument('--weight-decay', type=float, default=0.05, help='weight decay for optimizer (default: 0.01)')
     parser.add_argument('--warmup-epochs', type=int, default=10, help='weight decay for optimizer (default: 0.01)')
@@ -142,9 +146,10 @@ def run_test(model, device, test_loader, criterion, set="Test"):
     print('\n{} set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         set, test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+    validation_set_accuracies.append(100. * correct / len(test_loader.dataset))
 
 
-def run(args):
+def run(args, use_saved_models):
     # Download and load the training data
     transform = transforms.Compose([
         # ImageNet mean/std values should also fit okayish for CIFAR
@@ -203,17 +208,41 @@ def run(args):
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), eps=1e-08,
                             weight_decay=args.weight_decay)
 
+    if use_saved_models:
+        with open(args.model + " trained model.pkl", "rb") as f:
+            model = pickle.load(f)
+        run_test(model, device, testloader, criterion)
+        return
+
     for epoch in range(1, args.epochs + 1):
         train(model, trainloader, optimizer, criterion, device, epoch)
         run_test(model, device, valloader, criterion, set="Validation")
         adjust_learning_rate(optimizer, epoch - 1, args)
+
+    # plotting the validation accuracies progress
+    x_data = np.arange(1, args.epochs + 1, dtype=int)
+    y_data = np.array(validation_set_accuracies)
+    plt.figure(figsize=(8, 4))
+    plt.plot(x_data, y_data, label='training progress', color='blue')
+    plt.title('Line Plot of validation set accuracies in each epoch')
+    plt.xlabel('epochs')
+    plt.ylabel('validation set accuracy')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig(args.model + " validation set accuracy progress.png")
+
+    # saving the model
+    if args.save_model:
+        with open(args.model + " trained model.pkl", "wb") as f:
+            pickle.dump(model, f)
 
     run_test(model, device, testloader, criterion)
 
 
 if __name__ == '__main__':
     args = parse_args()
-    run(args)
+    run(args, False)
+
 
 # Training setups from ChatGPT
 # https://chatgpt.com/share/691c4f67-4094-800c-980b-0770d44a8329
