@@ -445,7 +445,7 @@ class CrossViT(nn.Module):
 
 if __name__ == "__main__":
     x = torch.randn(16, 3, 32, 32)
-    vit = ViT(image_size=32, patch_size=8, num_classes=10, dim=64, depth=2, heads=8, mlp_dim=128, dropout=0.1,
+    vit = ViT(image_size=32, patch_size=4, num_classes=10, dim=768, depth=12, heads=12, mlp_dim=3072, dropout=0.1,
               emb_dropout=0.1)
     cvit = CrossViT(image_size=32, num_classes=10, sm_dim=96, lg_dim=192, sm_patch_size=4,
                     sm_enc_depth=3, sm_enc_heads=3, sm_enc_mlp_dim=128, sm_enc_dim_head=64,

@@ -21,9 +21,9 @@ validation_set_accuracies = []
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a neural network to classify CIFAR10')
-    parser.add_argument('--model', type=str, default='cvit', help='model to train (default: r18)')
+    parser.add_argument('--model', type=str, default='vit', help='model to train (default: r18)')
     parser.add_argument('--batch-size', type=int, default=256, help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train (default: 5)')
+    parser.add_argument('--epochs', type=int, default=300, help='number of epochs to train (default: 5)')
     parser.add_argument('--lr', type=float, default=5e-4, help='learning rate (default: 0.003)')
     parser.add_argument('--momentum', type=float, default=0.9, help='SGD momentum (default: 0.9)')
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
