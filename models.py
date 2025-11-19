@@ -447,10 +447,10 @@ if __name__ == "__main__":
     x = torch.randn(16, 3, 32, 32)
     vit = ViT(image_size=32, patch_size=8, num_classes=10, dim=64, depth=2, heads=8, mlp_dim=128, dropout=0.1,
               emb_dropout=0.1)
-    cvit = CrossViT(image_size=32, num_classes=10, sm_dim=64, lg_dim=128, sm_patch_size=8,
-                    sm_enc_depth=2, sm_enc_heads=8, sm_enc_mlp_dim=128, sm_enc_dim_head=64,
-                    lg_patch_size=16, lg_enc_depth=2, lg_enc_heads=8, lg_enc_mlp_dim=128,
-                    lg_enc_dim_head=64, cross_attn_depth=2, cross_attn_heads=8, cross_attn_dim_head=64,
+    cvit = CrossViT(image_size=32, num_classes=10, sm_dim=96, lg_dim=192, sm_patch_size=4,
+                    sm_enc_depth=3, sm_enc_heads=3, sm_enc_mlp_dim=128, sm_enc_dim_head=64,
+                    lg_patch_size=8, lg_enc_depth=5, lg_enc_heads=6, lg_enc_mlp_dim=128,
+                    lg_enc_dim_head=64, cross_attn_depth=3, cross_attn_heads=8, cross_attn_dim_head=64,
                     depth=3, dropout=0.1, emb_dropout=0.1)
     print(vit(x).shape)
     print(cvit(x).shape)
